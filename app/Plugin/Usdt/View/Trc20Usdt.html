@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>TRC20-USDT - 最好的虚拟交易方式！</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/assets/static/jquery.min.js"></script>
+    <script src="/assets/static/layer/layer.js"></script>
+    <script src="/assets/static/jquery.qrcode.min.js"></script>
+    <script src="/assets/static/clipboard.js"></script>
+
+    <style>
+        .hr-top {
+            margin-top: 20px;
+            border-top: 1px dashed #e5e5e5;
+            padding: 10px 0;
+            position: relative;
+        }
+
+        .mobile {
+            display: none;
+        }
+
+
+        .zhuanzhang_box {
+            font-size: 16px;
+            margin: 20px 20px;
+            font-weight: bolder;
+            border: 1px dashed gainsboro;
+            padding: 20px 0;
+            border-radius: 20px;
+            box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+        }
+
+        .account_box {
+            border: 1px dashed gainsboro;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            margin: 20px 20px 0 20px;
+            box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+        }
+
+        .copy {
+            font-size: 14px;
+            display: inline-block;
+            padding: 2px 5px;
+            position: relative;
+            top: -2px;
+            background: linear-gradient(to bottom, #f5fffa, #cefbe361);
+            border-radius: 5px;
+            border: 1px dashed #8080806e;
+            outline: none;
+        }
+
+        .copy:hover {
+            color: #14d267;
+        }
+    </style>
+    <link href="#{PluginView('Css/pay.css')}" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div class=" body">
+    <h1 class="mod-title">
+        <span class="ico_log ico-usdt" style="width: 32px;height: 38px;"></span><b
+                style="font-size: 20px;color: #0ba798;">TRC20-USDT</b>
+    </h1>
+
+
+    <div class="mod-ct" style="margin-top: 2px;">
+
+        <div class="pc">
+            <div style="font-size: 32px;padding-top: 20px;">请支付 <b style="color: red;">
+                    #{sprintf("%.3f",$order.acg_amount)}</b> <b style="color: #28dd81;">USDT</b>
+            </div>
+            <div class="hr-top"></div>
+
+            <div class="qrcode-img-wrapper" data-role="qrPayImgWrapper">
+                <div data-role="qrPayImg" class="qrcode-img-area">
+                    <div class="ui-loading qrcode-loading" data-role="qrPayImgLoading" style="display: none;">加载中
+                    </div>
+                    <div style="position: relative;display: inline-block;">
+                        <div style="margin: 5px;display: block;" id="qrcode"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="account_box">
+                <table>
+                    <tbody>
+                    <tr>
+                        <td>地址:</td>
+                        <td style="color: #26bc0d;">
+                            #{$config.trc20_usdt_address}
+                            <button class="copy copyAccount" data-clipboard-text="#{$config.trc20_usdt_address}">复制
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="zhuanzhang_box">
+                <div style="color: #0a53be;">先复制钱包地址，扫码后也可以复制</div>
+                <div class="jiantou">⇓</div>
+                <div style="color: red;">数额填写：<b
+                            style="color: #0eae23;font-size: 20px;">#{sprintf("%.3f",$order.acg_amount)}</b> <b
+                            style="color: #0ba798;">USDT</b>，否则不到账
+                </div>
+                <div class="jiantou">⇓</div>
+                <div style="color: lightseagreen;">付款成功，等待20秒~2分钟到账</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>
+                <div class="tip ">
+                    <div style="margin-bottom: 10px;"><b style="font-size: 18px;">请在</b>
+                        <strong id="hour_show"><s id="h"></s>0时</strong>
+                        <strong id="minute_show"><s></s>0分</strong>
+                        <strong id="second_show"><s></s>0秒</strong>
+                        <b style="font-size: 18px;">完成支付!</b>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="detail" id="orderDetail">
+                <dl class="detail-ct" id="desc" style="display: none;">
+                    <dt>金额</dt>
+                    <dd>#{sprintf("%.3f",$order.acg_amount)} USDT</dd>
+                    <dt>商户订单：</dt>
+                    <dd id="ordernum">#{$order.trade_no}</dd>
+                    <dt>创建时间：</dt>
+                    <dd>#{$order.create_time}</dd>
+                    <dt>状态</dt>
+                    <dd>等待支付</dd>
+                </dl>
+
+                <a href="javascript:void(0)" class="arrow" style="z-index: 999999"><i class="ico-arrow"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        let tradeNo = '#{$order.trade_no}';
+
+        $('#qrcode').qrcode({
+            render: "canvas",
+            width: 200,
+            height: 200,
+            text: "#{$config.trc20_usdt_address}"
+        });
+
+        function queryTimer(tradeNo, unpaid = null, paid = null, expired = null) {
+            let timer = 0;
+            let callback = () => {
+                $.post('/plugin/usdt/api/query', {tradeNo: tradeNo}, res => {
+                    if (res.code != 200) {
+                        typeof expired === 'function' && expired(res);
+                        clearInterval(timer);
+                        return;
+                    }
+                    if (res.data.status == 0) {
+                        typeof unpaid === 'function' && unpaid(res.data);
+                    } else if (res.data.status == 1) {
+                        typeof paid === 'function' && paid(res.data);
+                        clearInterval(timer);
+                    }
+                });
+            }
+            callback();
+            timer = setInterval(() => {
+                callback();
+            }, 10000);
+        }
+
+        function expireTimer(orderCreateDate, channelOrderExpire, done = null) {
+            let timer = 0;
+            let callback = () => {
+                let date = orderCreateDate.substring(0, 19);
+                date = date.replace(/-/g, '/');
+                let timestamp = new Date(date).getTime() / 1000;
+                let now_timestamp = parseInt(new Date().getTime() / 1000);
+                let expire = (parseInt(timestamp) + parseInt(channelOrderExpire)) - now_timestamp;
+                var day = Math.floor(expire / (24 * 3600)); // Math.floor()向下取整
+                var hour = Math.floor((expire - day * 24 * 3600) / 3600);
+                var minute = Math.floor((expire - day * 24 * 3600 - hour * 3600) / 60);
+                var second = expire - day * 24 * 3600 - hour * 3600 - minute * 60;
+                let cc = {
+                    expire: expire,
+                    day: day,
+                    hour: hour,
+                    minute: minute,
+                    second: second
+                }
+                typeof done === 'function' && done(cc);
+                if (expire <= 0) {
+                    clearInterval(timer);
+                }
+            }
+            timer = setInterval(() => {
+                callback();
+            }, 1000);
+        }
+
+        queryTimer(tradeNo, null, res => {
+            layer.msg('支付成功');
+            setTimeout(() => {
+                window.location.href = "#{$order.return_url}";
+            }, 1000);
+        }, res => {
+            layer.msg('订单已过期');
+            setTimeout(() => {
+                window.location.href = "#{$order.return_url}";
+            }, 1000);
+        });
+
+        expireTimer('#{$order.create_time}', 1200, res => {
+            $('#hour_show').html(res.hour + "时");
+            $('#minute_show').html(res.minute + "分");
+            $('#second_show').html(res.second + "秒");
+        });
+
+        //点击小箭头事件
+        $('#orderDetail a').click(function () {
+            if ($('#orderDetail').hasClass('detail-open')) {
+                $('#orderDetail .detail-ct').slideUp(500, function () {
+                    $('#orderDetail').removeClass('detail-open');
+                });
+            } else {
+                $('#orderDetail .detail-ct').slideDown(500, function () {
+                    $('#orderDetail').addClass('detail-open');
+                });
+            }
+        });
+
+        $('.copyAccount').click(function () {
+            let clipboard = new ClipboardJS(".copyAccount");
+            clipboard.on('success', function (e) {
+                layer.msg("钱包地址复制成功");
+            });
+        });
+    </script>
+
+</body>
+</html>

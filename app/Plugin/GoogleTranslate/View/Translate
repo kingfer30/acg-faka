@@ -1,0 +1,145 @@
+<style>
+    body {
+        top: 0px !important;
+        min-height: 0px !important;
+    }
+
+    .goog-text-highlight {
+        background-color: transparent !important;
+        -webkit-box-shadow: 0 0px 0px rgba(0, 0, 0, 0) !important;
+        -moz-box-shadow: 0 0px 0px rgba(0, 0, 0, 0) !important;
+        box-shadow: 0 0px 0px rgba(0, 0, 0, 0) !important;
+    }
+
+    .goog-te-banner-frame, #goog-gt-tt {
+        display: none !important;
+    }
+
+    #google_translate_element {
+        position: fixed;
+        #{$postion.y_direction}: #{$postion.y};
+        #{$postion.x_direction}: #{$postion.x};
+        z-index: 999999;
+    }
+
+    .goog-te-gadget-simple {
+        background: #f8fff9 !important;
+        border: none !important;
+        border-radius: 8px;
+        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px !important;
+    }
+
+    span {
+        font-family: HarmonyOS;
+    }
+</style>
+
+<div id="google_translate_element">
+</div>
+
+<script>
+    function TransLateisPc() {
+        var userAgentInfo = navigator.userAgent;
+        var Agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod"];
+        var flag = true;
+        for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+            }
+        }
+        return flag;
+    }
+
+    const resourcesUrl = '/app/Plugin/GoogleTranslate/View/';
+    const allLanguage = 'de,hi,lt,hr,lv,ht,hu,zh-CN,hy,uk,mg,id,ur,mk,ml,mn,af,mr,uz,ms,el,mt,is,it,my,es,et,eu,ar,pt-PT,ja,ne,az,fa,ro,nl,en-GB,no,be,fi,ru,bg,fr,bs,sd,se,si,sk,sl,ga,sn,so,gd,ca,sq,sr,kk,st,km,kn,sv,ko,sw,gl,zh-TW,pt-BR,co,ta,gu,ky,cs,pa,te,tg,th,la,cy,pl,da,tr'.split(',');
+    var localLanguage;
+    if (navigator.language) {
+        localLanguage = navigator.language;
+    } else {
+        localLanguage = navigator.browserLanguage;
+    }
+
+    if ($.inArray(localLanguage, allLanguage) == -1) {
+        localLanguage = "zh-CN";
+    }
+
+    $(function () {
+        function dragMove(dom, moveOut) {
+            var obj = $(dom);
+            moveOut = moveOut || false;
+            obj.bind('mousedown', start);
+            var deltaX = 0, deltaY = 0;
+
+            function start(e) {
+                var ol = obj.offset().left;
+                var ot = obj.offset().top;
+                deltaX = e.pageX - ol;
+                deltaY = e.pageY - ot;
+
+                if (TransLateisPc()) {
+                    $(document).bind({
+                        'mousemove': move,
+                        'mouseup': stop
+                    });
+                } else {
+                    $(document).bind({
+                        'touchmove': mobileMove,
+                    });
+                }
+                return false;
+            }
+
+            function mobileMove(e) {
+                let data = {pageX: e.touches[0].clientX, pageY: e.touches[0].clientY};
+                move(data);
+            }
+
+            function move(e) {
+                var tpX = 0, tpY = 0;
+                if ((e.pageX - deltaX > 0 && e.pageY - deltaY > 0) || moveOut) {
+                    tpX = e.pageX - deltaX;
+                    tpY = e.pageY - deltaY;
+                } else if (e.pageX - deltaX <= 0 && e.pageY - deltaY > 0) {
+                    tpX = 0;
+                    tpY = e.pageY - deltaY;
+                } else if (e.pageX - deltaX > 0 && e.pageY - deltaY <= 0) {
+                    tpX = e.pageX - deltaX;
+                    tpY = 0;
+                }
+                obj.css({
+                    "left": (tpX),
+                    "top": (tpY)
+                });
+                return false;
+            }
+
+            function stop() {
+                if (TransLateisPc()) {
+                    $(document).unbind({
+                        'mousemove': move,
+                        'mouseup': stop
+                    });
+                } else {
+                    $(document).unbind({
+                        'touchmove': mobileMove
+                    });
+                }
+            }
+        }
+
+        dragMove("#google_translate_element");
+    });
+
+
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+            {
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false,
+                includedLanguages: '#{implode(",",$cfg.translate)}'
+            }, 'google_translate_element'
+        );
+    }
+</script>
+<script src="/app/Plugin/GoogleTranslate/View/js/element.js?cb=googleTranslateElementInit&version=1.0.2"></script>
