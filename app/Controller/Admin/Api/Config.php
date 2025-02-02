@@ -187,6 +187,13 @@ class Config extends Manage
             $mail->AddAddress($_POST['email']);
             $mail->Subject = $shopName . "-手动测试邮件";
             $mail->MsgHTML('测试邮件，发送时间：' . Date::current());
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ]
+            ];
             $result = $mail->Send();
         } catch (\Exception $e) {
             throw new JSONException("发送失败");

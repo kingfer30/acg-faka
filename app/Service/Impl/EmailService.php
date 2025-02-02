@@ -43,6 +43,13 @@ class EmailService implements Email
             $mail->Subject = $title;
             $mail->MsgHTML($content);
             $mail->Timeout = 10; //默认超时10秒钟
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ]
+            ];
             $result = $mail->Send();
         } catch (\Exception $e) {
             return false;
